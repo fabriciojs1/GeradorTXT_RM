@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Arquivo TXT - TOTVS RM</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        /* Reset CSS */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #dbdbdb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .logo {
+            width: 150px;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input[type="file"] {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 100%;
+        }
+
+        button {
+            background-color: #0078d4;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:disabled {
+            background-color: #aaa;
+            cursor: not-allowed;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #005ea6;
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Logo TOTVS -->
+        <img src="https://midias.inforchannel.com.br/wp-content/uploads/2018/04/totvs_h_pos_grafite-1.png" alt="logo" class="logo">
+        
+        <h2>Gerador de Arquivos para Importação</h2>
+        
+        <label for="excelFile">Selecione a planilha Excel:</label>
+        <input type="file" id="excelFile" accept=".xlsx, .xls" />
+
+        <button id="processButton" disabled>Processar e Baixar TXT</button>
+
+        <div class="footer">Desenvolvido por Fabricio dos Santos</div>
+    </div>
+
+    <script>
+        function ajustarTamanho(texto, tamanho) {
+            texto = texto !== undefined && texto !== null ? String(texto) : ""; // Converte para string se não for nulo
+            return texto.length > tamanho ? texto.substring(0, tamanho) : texto.padEnd(tamanho, " ");
+        }
+
+        // Seletor de arquivo (input file)
+        const inputFile = document.getElementById('excelFile');
+        const processButton = document.getElementById('processButton');
+
+        // Função para habilitar o botão de processar
+        inputFile.addEventListener('change', (event) => {
+            const file = event.target.files[0]; // Arquivo selecionado
+            if (file) {
+                processButton.disabled = false; // Habilita o botão se houver arquivo
+            } else {
+                processButton.disabled = true;
+            }
+        });
+
+        // Ao clicar no botão, processa o arquivo
+        processButton.addEventListener('click', () => {
+            const file = inputFile.files[0]; // Pega o arquivo selecionado
+
+            if (file) {
+                const reader = new FileReader();
+
+                reader.onload = (e) => {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                    // Primeira e segunda linhas da planilha
+                    const nomesColunas = jsonData[0].filter(col => col); // Nomes das colunas
+                    const tamanhosColunas = jsonData[1].map(Number).filter(tam => !isNaN(tam)); // Tamanhos das colunas
+
+                    // Remove as duas primeiras linhas e mantém somente os dados
+                    const dados = jsonData.slice(2);
+
+                    // Processa os dados ajustando conforme os tamanhos especificados
+                    let conteudoTxt = "";
+                    dados.forEach(linha => {
+                        const linhaAjustada = nomesColunas.map((_, i) => {
+                            const valor = linha[i] !== undefined ? linha[i] : "";
+                            return ajustarTamanho(valor, tamanhosColunas[i]);
+                        }).join(";");
+
+                        conteudoTxt += linhaAjustada + ";\n"; // Adiciona o separador no final e a quebra de linha
+                    });
+
+                    // Cria o arquivo TXT
+                    const blob = new Blob([conteudoTxt], { type: "text/plain;charset=utf-8" });
+                    const link = document.createElement("a");
+                    link.href = URL.createObjectURL(blob);
+                    link.download = "saida.txt";
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                };
+
+                reader.readAsArrayBuffer(file);
+            }
+        });
+    </script>
+</body>
+</html>
