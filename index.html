@@ -102,7 +102,7 @@
 
     <script>
         function ajustarTamanho(texto, tamanho) {
-            texto = texto !== undefined && texto !== null ? String(texto) : ""; // Converte para string se não for nulo
+            texto = texto !== undefined && texto !== null ? String(texto).trim() : ""; // Remove espaços extras
             return texto.length > tamanho ? texto.substring(0, tamanho) : texto.padEnd(tamanho, " ");
         }
 
