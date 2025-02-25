@@ -143,7 +143,7 @@
                 });
 
                 // Criar o Blob diretamente com a codificação correta
-                const blob = new Blob([new TextEncoder("latin1").encode(linhasProcessadas.join("\n"))], { type: "text/plain;charset=ISO-8859-1" });
+                const blob = new Blob(["\uFEFF" + linhasProcessadas.join("\n")], { type: "text/plain;charset=UTF-8" });
 
                 const link = document.createElement("a");
                 link.href = URL.createObjectURL(blob);
